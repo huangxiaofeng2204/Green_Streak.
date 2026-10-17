@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuỗi Ngày Sống Xanh</title>
+    <!-- Tailwind CSS cho Giao diện Mobile-First -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Hiệu ứng chuyển mượt mà */
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Tối ưu scrollbar cho khung max-w-md */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #22c55e; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center min-h-screen">
+
+    <!-- App Container: Mobile First (max-w-md) -->
+    <div class="w-full max-w-md bg-white shadow-xl h-screen relative flex flex-col overflow-hidden">
+        
+        <!-- Header & Progress Bar -->
+        <header class="bg-green-600 text-white p-4 shadow-md z-10">
+            <div class="flex justify-between items-center mb-2">
+                <h1 class="text-xl font-bold"><i class="fa-solid fa-leaf mr-2"></i>Sống Xanh</h1>
+                <span id="user-points" class="font-bold bg-green-700 px-3 py-1 rounded-full">0 đ</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-green-800 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-white h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <p class="text-xs mt-1 text-green-100 text-right"><span id="task-completed">0</span>/10 nhiệm vụ hôm nay</p>
+        </header>
+
+        <!-- Main Content (Scrollable) -->
+        <main class="flex-1 overflow-y-auto bg-green-50 p-4 pb-20">
+            
+            <!-- Tab: Nhiệm vụ (Missions) -->
+            <div id="tab-missions" class="tab-content active">
+                <h2 class="text-lg font-bold text-green-800 mb-4">Nhiệm vụ ngày: <span id="current-date"></span></h2>
+                <div id="mission-list" class="space-y-3">
+                    <!-- JS sẽ render nhiệm vụ vào đây -->
+                </div>
+            </div>
+
+            <!-- Tab: Bảng Xếp Hạng (Leaderboard) -->
+            <div id="tab-leaderboard" class="tab-content">
+                <h2 class="text-lg font-bold text-green-800 mb-4"><i class="fa-solid fa-trophy text-yellow-500 mr-2"></i>Bảng Vàng</h2>
+                <div id="leaderboard-list" class="bg-white rounded-lg shadow p-2">
+                    <!-- Dữ liệu mẫu -->
+                    <div class="flex items-center justify-between p-3 border-b">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-green-600">1</span>
+                            <div class="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-xs">U</div>
+                            <span class="font-semibold">Nhã Uyên</span>
+                        </div>
+                        <span class="font-bold text-green-600">240 đ</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-gray-500">2</span>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">M</div>
+                            <span class="font-semibold">Minh Anh</span>
+                        </div>
+                        <span class="font-bold text-green-600">180 đ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Hồ Sơ (Profile) -->
+            <div id="tab-profile" class="tab-content">
+                <div class="bg-white p-5 rounded-lg shadow text-center">
+                    <div class="w-24 h-24 mx-auto bg-green-200 rounded-full mb-3 flex items-center justify-center text-3xl overflow-hidden relative cursor-pointer" onclick="document.getElementById('avatar-upload').click()">
+                        <img id="avatar-preview" src="" alt="" class="w-full h-full object-cover hidden">
+                        <i id="avatar-icon" class="fa-solid fa-user text-green-600"></i>
+                        <input type="file" id="avatar-upload" class="hidden" accept="image/*">
+                    </div>
+                    <p class="text-xs text-gray-500 mb-4">Chạm để đổi Avatar</p>
+                    
+                    <input type="text" id="display-name" value="EcoHero_1234" class="w-full text-center border-b-2 border-green-500 focus:outline-none text-lg font-bold mb-4 bg-transparent">
+                    <button class="bg-green-600 text-white px-6 py-2 rounded-full w-full font-bold shadow hover:bg-green-700">Lưu Hồ Sơ</button>
+                    
+                    <button onclick="document.getElementById('admin-login').classList.toggle('hidden')" class="mt-8 text-sm text-gray-400 underline">Khu vực BTC</button>
+                    
+                    <!-- Admin Login Hidden -->
+                    <div id="admin-login" class="mt-4 hidden text-left bg-gray-100 p-3 rounded">
+                        <input type="password" id="admin-pw" placeholder="Mật khẩu BTC..." class="w-full p-2 rounded border mb-2">
+                        <button onclick="loginAdmin()" class="bg-gray-800 text-white px-4 py-2 rounded w-full text-sm">Vào Admin Panel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Admin Panel -->
+            <div id="tab-admin" class="tab-content hidden">
+                <h2 class="text-lg font-bold text-red-600 mb-4"><i class="fa-solid fa-shield-halved mr-2"></i>Duyệt Nhiệm Vụ (Admin)</h2>
+                <div id="pending-list" class="space-y-3">
+                    <!-- Dữ liệu mẫu Admin -->
+                    <div class="bg-white p-3 rounded shadow border-l-4 border-yellow-400">
+                        <p class="font-bold text-sm">User: EcoHero_1234</p>
+                        <p class="text-xs text-gray-600 mb-2">Nhiệm vụ: Thực thần càn quét</p>
+                        <div class="h-32 bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-400">[Ảnh minh chứng]</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 bg-green-500 text-white py-1 rounded text-sm"><i class="fa-solid fa-check"></i> Duyệt (10đ)</button>
+                            <button class="flex-1 bg-red-500 text-white py-1 rounded text-sm"><i class="fa-solid fa-xmark"></i> Từ chối</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bg-white border-t border-gray-200 flex justify-around p-3 pb-6 text-gray-500 absolute bottom-0 w-full z-10">
+            <button onclick="switchTab('missions', this)" class="nav-btn active text-green-600 flex flex-col items-center w-1/3">
+                <i class="fa-solid fa-list-check text-xl"></i>
+                <span class="text-[10px] mt-1 font-bold">Nhiệm vụ</span>
+            </button>
+            <button onclick="switchTab('leaderboard', this)" class="nav-btn flex flex-col items-center w-1/3">
+                <i class="fa-solid fa-ranking-star text-xl"></i>
+                <span class="text-[10px] mt-1 font-bold">Xếp hạng</span>
+            </button>
+            <button onclick="switchTab('profile', this)" class="nav-btn flex flex-col items-center w-1/3">
+                <i class="fa-solid fa-user text-xl"></i>
+                <span class="text-[10px] mt-1 font-bold">Hồ sơ</span>
+            </button>
+        </nav>
+
+        <!-- Modal Nộp Minh Chứng -->
+        <div id="upload-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex flex-col justify-end">
+            <div class="bg-white rounded-t-2xl p-5 w-full max-w-md mx-auto transform transition-transform translate-y-0 h-[70vh] flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="modal-title" class="font-bold text-lg text-green-800">Tên Nhiệm Vụ</h3>
+                    <button onclick="closeModal()" class="text-gray-500 text-2xl">&times;</button>
+                </div>
+                <p id="modal-desc" class="text-sm text-gray-600 mb-4">Mô tả nhiệm vụ</p>
+                
+                <div class="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-green-300 rounded-lg bg-green-50 mb-4 p-4 relative">
+                    <input type="file" id="evidence-file" accept="image/*,video/*" capture="environment" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-green-500 mb-2"></i>
+                    <p class="text-center text-sm font-semibold text-green-700">Chạm để Chụp / Quay Video<br><span class="text-xs font-normal">(Hoặc tải lên từ máy)</span></p>
+                    <canvas id="compress-canvas" class="hidden"></canvas>
+                </div>
+                
+                <button onclick="submitMission()" class="bg-green-600 text-white py-3 rounded-xl font-bold w-full shadow-lg">Gửi Minh Chứng</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Cấu hình Firebase & Logic JavaScript -->
+    <!-- Script Firebase V8 Compat (Dùng cho HTML thuần dễ nhất) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+    <script>
+        // 1. CHUẨN BỊ DỮ LIỆU NHIỆM VỤ (10 Nhiệm Vụ)
+        const missionsData = [
+            { id: 'm1', title: 'Chiến thần rút chốt', pts: 20, desc: 'Rút 8 phích cắm điện khác nhau', type: 'video' },
+            { id: 'm2', title: 'Phong ấn lôi thần', pts: 10, desc: 'Tắt 5 công tắc điện', type: 'video' },
+            { id: 'm3', title: 'Thực thần càn quét', pts: 10, desc: 'Vét sạch đồ ăn', type: 'image' },
+            { id: 'm4', title: 'Thủy bình độc bản', pts: 30, desc: 'Dùng bình nước/ly cá nhân mua nước', type: 'image' },
+            { id: 'm5', title: 'Căng hải vào việc', pts: 20, desc: 'Đi bộ thay vì đi xe máy', type: 'video' },
+            { id: 'm6', title: 'Túi/Balo vạn năng', pts: 30, desc: 'Mang túi riêng đựng đồ mới mua', type: 'image' },
+            { id: 'm7', title: 'Khai mở phong môn', pts: 10, desc: 'Mở 4 cánh cửa sổ khác nhau', type: 'image' },
+            { id: 'm8', title: 'Cấp thủy dưỡng mộc', pts: 10, desc: 'Tưới cây', type: 'video' },
+            { id: 'm9', title: 'Thanh trừng rác thải', pts: 10, desc: 'Vứt rác đúng nơi', type: 'image' },
+            { id: 'm10', title: 'Độ lại đồ phế', pts: 50, desc: 'Tái chế 1 sản phẩm có tính ứng dụng', type: 'image' }
+        ];
+
+        // Hàm lấy ngày hiện tại định dạng YYYY-MM-DD
+        function getTodayString() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('vi-VN');
+
+        // Render UI Nhiệm vụ
+        function renderMissions() {
+            const list = document.getElementById('mission-list');
+            list.innerHTML = '';
+            
+            missionsData.forEach(m => {
+                // Trạng thái giả lập: pending (vàng), approved (xanh), rejected (đỏ), hoặc chưa làm (trắng)
+                let statusColor = "bg-white border-gray-200 text-gray-700";
+                let statusIcon = `<div class="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0"></div>`;
+                
+                list.innerHTML += `
+                    <div onclick="openModal('${m.id}', '${m.title}', '${m.desc}', '${m.type}')" 
+                         class="${statusColor} border rounded-xl p-4 shadow-sm flex items-center gap-3 cursor-pointer hover:shadow-md transition">
+                        ${statusIcon}
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm">${m.title} <span class="text-xs font-normal text-green-600 bg-green-100 px-2 py-0.5 rounded">+${m.pts}đ</span></h4>
+                            <p class="text-xs opacity-80 mt-1">${m.desc} (${m.type === 'video' ? 'Quay Video' : 'Chụp Ảnh'})</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-gray-300 text-sm"></i>
+                    </div>
+                `;
+            });
+        }
+
+        // Logic Chuyển Tab
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-green-600');
+                el.classList.add('text-gray-500');
+            });
+            btn.classList.add('text-green-600');
+            btn.classList.remove('text-gray-500');
+        }
+
+        // Modal Logic
+        let currentMissionId = null;
+        function openModal(id, title, desc, type) {
+            currentMissionId = id;
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            
+            const fileInput = document.getElementById('evidence-file');
+            fileInput.setAttribute('accept', type === 'video' ? 'video/mp4,video/quicktime,video/*,video/x-m4v' : 'image/*');
+            
+            document.getElementById('upload-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('upload-modal').classList.add('hidden');
+            document.getElementById('evidence-file').value = ""; // Reset file
+        }
+
+        // Cập nhật Thanh Tiến Trình (Progress Bar)
+        function updateProgress(completed, total) {
+            document.getElementById('task-completed').innerText = completed;
+            const percent = (completed / total) * 100;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+        }
+
+        // Tối ưu ảnh bằng HTML5 Canvas trước khi upload
+        document.getElementById('evidence-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            if(file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.getElementById('compress-canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Tính toán resize (Max width/height 600px)
+                        const MAX_SIZE = 600;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height && width > MAX_SIZE) {
+                            height *= MAX_SIZE / width; width = MAX_SIZE;
+                        } else if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height; height = MAX_SIZE;
+                        }
+                        
+                        canvas.width = width; canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Xuất ra base64 jpeg để đẩy lên Firebase
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                        console.log("Ảnh đã nén sẵn sàng upload");
+                        // Gán vào biến toàn cục hoặc upload trực tiếp
+                    }
+                    img.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                console.log("Là video, sẽ upload file thô lên Firebase Storage");
+                // Lưu ý: Video có dung lượng cao, cần Firebase Storage quota lớn
+            }
+        });
+
+        function submitMission() {
+            alert("Đã nộp minh chứng thành công! Nhiệm vụ đang ⏳ Chờ duyệt.");
+            closeModal();
+            // Gửi dữ liệu vào collection 'pending_approvals' ở đây
+        }
+
+        // Đăng nhập Admin
+        function loginAdmin() {
+            const pw = document.getElementById('admin-pw').value;
+            if(pw === 'adminvippro1102') {
+                document.getElementById('tab-admin').classList.remove('hidden');
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('tab-profile').classList.remove('active');
+                document.getElementById('tab-admin').classList.add('active');
+                alert("Đăng nhập Admin thành công!");
+            } else {
+                alert("Sai mật khẩu!");
+            }
+        }
+
+        // Khởi tạo giao diện
+        renderMissions();
+        updateProgress(0, 10); // Giả lập chưa hoàn thành nhiệm vụ nào
+
+        /* 
+        =========================================
+        HƯỚNG DẪN KẾT NỐI FIREBASE CHO BẠN
+        =========================================
+        1. Thay thế config dưới đây bằng config từ Firebase Console của bạn.
+        2. Bật Authentication (Email/Password).
+        3. Tạo Firestore Database và Storage.
+        */
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_ID",
+            appId: "YOUR_APP_ID"
+        };
+        // firebase.initializeApp(firebaseConfig);
+        // const db = firebase.firestore();
+        // const auth = firebase.auth();
+        // const storage = firebase.storage();
+    </script>
+</body>
+</html>
